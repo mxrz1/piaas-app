@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <h1 class="h2">Edit {{ category.observation_singular }}</h1>
+      <p class="text-muted">Update details for this entry in the {{ category.label.lower() }} journal.</p>
+      <form method="post" class="card card-body shadow-sm">
+        <div class="mb-3">
+          <label class="form-label" for="stream_name">Stream name</label>
+          <input class="form-control" type="text" id="stream_name" name="stream_name" value="{{ observation.stream_name }}" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="animal">Animal spotted</label>
+          <input class="form-control" type="text" id="animal" name="animal" value="{{ observation.animal }}" required>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" for="start_time">Start time (UTC)</label>
+            <input class="form-control" type="datetime-local" id="start_time" name="start_time" value="{{ start_form }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="end_time">End time (UTC)</label>
+            <input class="form-control" type="datetime-local" id="end_time" name="end_time" value="{{ end_form }}" placeholder="Optional">
+          </div>
+        </div>
+        <div class="mb-3 mt-3">
+          <label class="form-label" for="observer">Observer</label>
+          <input class="form-control" type="text" id="observer" name="observer" value="{{ observation.observer }}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="notes">Notes</label>
+          <textarea class="form-control" id="notes" name="notes" rows="3">{{ observation.notes }}</textarea>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          <a class="btn btn-link" href="{{ url_for('log') }}">Back to {{ category.observation_plural }} Log</a>
+          <button class="btn btn-primary" type="submit">Save {{ category.observation_singular }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock %}

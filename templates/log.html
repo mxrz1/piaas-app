@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h1 class="h2">{{ category.observation_plural }} Log</h1>
+      <p class="text-muted mb-0">Review documented activity for {{ category.label.lower() }}. Showing times in {{ display_timezone_name }}.</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{{ export_url }}">Download CSV</a>
+  </div>
+
+  <form class="card card-body shadow-sm mb-4" method="get">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label" for="stream_name">Stream name</label>
+        <input class="form-control" type="text" id="stream_name" name="stream_name" value="{{ query.get('stream_name', '') }}" placeholder="Stream">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="animal">Animal</label>
+        <input class="form-control" type="text" id="animal" name="animal" value="{{ query.get('animal', '') }}" placeholder="Animal">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="start_date">Start date (UTC)</label>
+        <input class="form-control" type="date" id="start_date" name="start_date" value="{{ query.get('start_date', '') }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="end_date">End date (UTC)</label>
+        <input class="form-control" type="date" id="end_date" name="end_date" value="{{ query.get('end_date', '') }}">
+      </div>
+    </div>
+    <div class="mt-3">
+      <button class="btn btn-primary" type="submit">Filter {{ category.observation_plural }}</button>
+      <a class="btn btn-link" href="{{ url_for('log') }}">Reset</a>
+    </div>
+  </form>
+
+  <div class="table-responsive">
+    <table class="table table-striped align-middle">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Stream</th>
+          <th>Animal</th>
+          <th>Start</th>
+          <th>End</th>
+          <th>Observer</th>
+          <th>Notes</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for obs in observations %}
+          <tr>
+            <td>{{ obs.id }}</td>
+            <td>{{ obs.stream_name }}</td>
+            <td>{{ obs.animal }}</td>
+            <td>{{ obs.start_time_display }}</td>
+            <td>{{ obs.end_time_display or "—" }}</td>
+            <td>{{ obs.observer or "—" }}</td>
+            <td>{{ obs.notes or "—" }}</td>
+            <td class="text-end">
+              <a class="btn btn-sm btn-outline-primary" href="{{ url_for('edit', obs_id=obs.id) }}">Edit</a>
+              <form class="d-inline" method="post" action="{{ url_for('delete', obs_id=obs.id) }}" onsubmit="return confirm('Delete this observation?');">
+                <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="8" class="text-center text-muted">No {{ category.observation_plural.lower() }} match these filters.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <nav aria-label="Pagination">
+    <ul class="pagination">
+      <li class="page-item {% if page == 1 %}disabled{% endif %}">
+        <a class="page-link" href="{{ prev_url }}">Previous</a>
+      </li>
+      {% for page_num, url in page_links %}
+        <li class="page-item {% if page_num == page %}active{% endif %}"><a class="page-link" href="{{ url }}">{{ page_num }}</a></li>
+      {% endfor %}
+      <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+        <a class="page-link" href="{{ next_url }}">Next</a>
+      </li>
+    </ul>
+  </nav>
+{% endblock %}

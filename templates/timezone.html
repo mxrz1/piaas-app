@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-lg-6">
+      <h1 class="h3">Display Timezone</h1>
+      <p class="text-muted">Choose how timestamps should be rendered for the {{ category.label.lower() }} record.</p>
+      <form method="post" class="card card-body shadow-sm">
+        <div class="mb-3">
+          <label class="form-label" for="timezone">Timezone</label>
+          <select class="form-select" id="timezone" name="timezone" required>
+            <option value="" disabled {% if not display_timezone_name %}selected{% endif %}>Select a timezone</option>
+            {% for tz in timezones %}
+              <option value="{{ tz }}" {% if tz == display_timezone_name %}selected{% endif %}>{{ tz }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button class="btn btn-primary" type="submit">Save Timezone</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}
