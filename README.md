@@ -1,1 +1,1 @@
-first commit so chat can start
+We use Python 3.12.0
