@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="row mb-4">
+    <div class="col-lg-6">
+      <h1 class="display-5">{{ category.observation_singular }} Recorder</h1>
+      <p class="lead">Log fresh sightings for the {{ category.label.lower() }} right from here.</p>
+      <form method="post" class="card card-body shadow-sm">
+        <div class="mb-3">
+          <label class="form-label" for="stream_name">Stream name</label>
+          <input class="form-control" type="text" id="stream_name" name="stream_name" placeholder="Riverbank live feed" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="animal">Animal spotted</label>
+          <input class="form-control" type="text" id="animal" name="animal" placeholder="Curious otter" required>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" for="start_time">Start time (UTC)</label>
+            <input class="form-control" type="datetime-local" id="start_time" name="start_time" value="{{ default_start }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="end_time">End time (UTC)</label>
+            <input class="form-control" type="datetime-local" id="end_time" name="end_time" placeholder="Optional">
+          </div>
+        </div>
+        <div class="mb-3 mt-3">
+          <label class="form-label" for="observer">Observer name</label>
+          <input class="form-control" type="text" id="observer" name="observer" placeholder="Your name (optional)">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="notes">Notes</label>
+          <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Behavior, conditions, or other {{ category.label.lower() }} insights"></textarea>
+        </div>
+        <button class="btn btn-primary" type="submit">Create {{ category.observation_singular }}</button>
+      </form>
+    </div>
+    <div class="col-lg-6">
+      <div class="alert alert-info">
+        <strong>Display timezone:</strong> {{ display_timezone_name }}
+      </div>
+      <h2 class="h4">Recent {{ category.observation_plural }}</h2>
+      {% if recent_observations %}
+        <div class="table-responsive">
+          <table class="table table-striped align-middle">
+            <thead>
+              <tr>
+                <th>Stream</th>
+                <th>Animal</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Observer</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for obs in recent_observations %}
+                <tr>
+                  <td>{{ obs.stream_name }}</td>
+                  <td>{{ obs.animal }}</td>
+                  <td>{{ obs.start_time_display }}</td>
+                  <td>{{ obs.end_time_display or "—" }}</td>
+                  <td>{{ obs.observer or "—" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-muted">No {{ category.observation_plural.lower() }} recorded yet. Be the first to document the action!</p>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
