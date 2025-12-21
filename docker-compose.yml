@@ -1,9 +1,16 @@
+# Docker Compose configuration for running the application as a service.
+# It defines how the container is built, configured, and exposed.
+
 services:
   web:
     build: .
-    image: myflaskapp:latest
+    image: nerds:latest
+    # Exposes the container's port 8000 to the host machine
     ports:
       - "8000:8000"
+    # Sets runtime environment variables for the application
     environment:
       APP_CATEGORY: land
+      FLASK_RUN_HOST: "0.0.0.0"
+      FLASK_RUN_PORT: "8000"
     restart: unless-stopped
