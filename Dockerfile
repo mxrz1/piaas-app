@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app /app
 
 # Define environment variables used by the application
-ENV APP_CATEGORY="land"
+ENV APP_CATEGORY="land_air"
 ENV FLASK_RUN_HOST="0.0.0.0"
 ENV FLASK_RUN_PORT="8000"
 
