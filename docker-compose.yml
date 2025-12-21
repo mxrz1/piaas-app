@@ -1,0 +1,8 @@
+services:
+  web:
+    image: myflaskapp:latest
+    ports:
+      - "8000:8000"
+    environment:
+      APP_CATEGORY: land
+    restart: unless-stopped
