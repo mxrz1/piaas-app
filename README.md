@@ -25,11 +25,11 @@ Note: the .env file is required and sets the category
 ## Deploy via Docker
 1. Build the docker image
    ```bash
-   sudo docker build -t myflaskapp:latest .
+   sudo docker build -t piaas-df-test .
    ```
 2A.Run the application via Dockerfile (not recommended)
    ```bash
-   sudo docker run --rm -p 8000:8000 -e APP_CATEGORY=land myflaskapp:latest
+   sudo docker run --rm -p 8000:8000 piaas-df-test
    ```
 2B.Run the application via docker compose (intended usecase)
    ```bash

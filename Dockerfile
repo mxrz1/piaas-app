@@ -1,19 +1,14 @@
-FROM python:3.12-slim
+FROM python:3.12
 
 WORKDIR /app
 
-# Install dependencies
-COPY requirements.txt .
+COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy your application folder
-COPY app/ ./app/
+COPY app /app
 
-# Flask config (matches "cd app && flask run")
-ENV FLASK_APP=app/app.py
-ENV FLASK_RUN_HOST=0.0.0.0
-ENV FLASK_RUN_PORT=8000
+ENV APP_CATEGORY="land"
+ENV HOST="0.0.0.0"
+ENV PORT="8000"
 
-EXPOSE 8000
-
-CMD ["flask", "run"]
+CMD ["python", "app.py"]
