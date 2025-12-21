@@ -22,12 +22,16 @@ We use Python 3.12.0
    ```
 Note: the .env file is required and sets the category
 
-6. Run the application via Dockerfile (not recommended)
+## Deploy via Docker
+1. Build the docker image
    ```bash
-   docker run --rm -p 8000:8000 -e APP_CATEGORY=land myflaskapp:latest
+   sudo docker build -t myflaskapp:latest .
    ```
-   
-7. Run the application via docker compose (intended usecase)
-```bash
-   docker compose up --build
+2A.Run the application via Dockerfile (not recommended)
+   ```bash
+   sudo docker run --rm -p 8000:8000 -e APP_CATEGORY=land myflaskapp:latest
+   ```
+2B.Run the application via docker compose (intended usecase)
+   ```bash
+   sudo docker compose up
    ```
