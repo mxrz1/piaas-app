@@ -15,11 +15,11 @@
         </div>
         <div class="row g-3">
           <div class="col-md-6">
-            <label class="form-label" for="start_time">Start time (UTC)</label>
+            <label class="form-label" for="start_time">Start time ({{ display_timezone_name }})</label>
             <input class="form-control" type="datetime-local" id="start_time" name="start_time" value="{{ start_form }}" required>
           </div>
           <div class="col-md-6">
-            <label class="form-label" for="end_time">End time (UTC)</label>
+            <label class="form-label" for="end_time">End time ({{ display_timezone_name }})</label>
             <input class="form-control" type="datetime-local" id="end_time" name="end_time" value="{{ end_form }}" placeholder="Optional">
           </div>
         </div>

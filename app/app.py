@@ -21,6 +21,7 @@ from flask import (
     Response,
     flash,
     g,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -260,23 +261,40 @@ def fetch_recent(limit: int = 25) -> List[sqlite3.Row]:
     ).fetchall()
 
 
-def parse_datetime_to_utc(value: str) -> datetime:
+def parse_datetime_to_utc(value: str, user_tz: Optional[ZoneInfo] = None) -> datetime:
+    """
+    Parse a datetime string to UTC.
+
+    Args:
+        value: The datetime string (typically from datetime-local input)
+        user_tz: The user's timezone. If provided and the datetime is naive,
+                 it will be interpreted as being in this timezone.
+
+    Returns:
+        A datetime object in UTC
+    """
     value = value.strip()
     if not value:
         raise ValueError("Datetime value is required")
     dt = datetime.fromisoformat(value)
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    else:
-        dt = dt.astimezone(timezone.utc)
+        # If no timezone info and user timezone provided, interpret as user's local time
+        if user_tz:
+            dt = dt.replace(tzinfo=user_tz)
+        else:
+            # Fallback to UTC if no user timezone
+            dt = dt.replace(tzinfo=timezone.utc)
+    # Convert to UTC
+    dt = dt.astimezone(timezone.utc)
     return dt.replace(microsecond=0)
 
 
-def parse_optional_datetime_to_utc(value: str) -> Optional[datetime]:
+def parse_optional_datetime_to_utc(value: str, user_tz: Optional[ZoneInfo] = None) -> Optional[datetime]:
+    """Parse an optional datetime string to UTC."""
     value = value.strip()
     if not value:
         return None
-    return parse_datetime_to_utc(value)
+    return parse_datetime_to_utc(value, user_tz)
 
 
 def utc_to_iso(dt: datetime) -> str:
@@ -292,8 +310,20 @@ def parse_utc_string(value: str) -> datetime:
     return dt.astimezone(timezone.utc)
 
 
-def format_for_form(value: str) -> str:
+def format_for_form(value: str, user_tz: Optional[ZoneInfo] = None) -> str:
+    """
+    Format a UTC datetime string for display in a datetime-local input.
+
+    Args:
+        value: UTC datetime string
+        user_tz: User's timezone for conversion. If None, uses UTC.
+
+    Returns:
+        Formatted string for datetime-local input
+    """
     dt = parse_utc_string(value)
+    if user_tz:
+        dt = dt.astimezone(user_tz)
     return dt.strftime("%Y-%m-%dT%H:%M")
 
 
@@ -360,6 +390,8 @@ def inject_globals() -> Dict[str, object]:
 
 @app.route("/", methods=["GET", "POST"])
 def home() -> Response:
+    display_tz = get_display_timezone()
+
     if request.method == "POST":
         stream_name = request.form.get("stream_name", "").strip()
         animal = request.form.get("animal", "").strip()
@@ -372,8 +404,9 @@ def home() -> Response:
             flash("Stream name and animal are required.", "danger")
             return redirect(url_for("home"))
         try:
-            start_dt = parse_datetime_to_utc(start_time_raw)
-            end_dt = parse_optional_datetime_to_utc(end_time_raw)
+            # Parse datetime inputs using user's timezone
+            start_dt = parse_datetime_to_utc(start_time_raw, display_tz)
+            end_dt = parse_optional_datetime_to_utc(end_time_raw, display_tz)
             if end_dt and end_dt < start_dt:
                 flash("End time cannot be earlier than start time.", "danger")
                 return redirect(url_for("home"))
@@ -397,9 +430,9 @@ def home() -> Response:
         flash(f"{g.category['observation_singular']} created.", "success")
         return redirect(url_for("home"))
 
-    display_tz = get_display_timezone()
     recent_rows = [serialize_observation(row, display_tz) for row in fetch_recent()]
-    default_start = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M")
+    # Default start time in user's timezone
+    default_start = datetime.now(display_tz).strftime("%Y-%m-%dT%H:%M")
     return render_template(
         "home.html",
         recent_observations=recent_rows,
@@ -452,6 +485,8 @@ def edit(obs_id: int) -> Response:
         flash("Observation not found for this category.", "danger")
         return redirect(url_for("log"))
 
+    display_tz = get_display_timezone()
+
     if request.method == "POST":
         stream_name = request.form.get("stream_name", "").strip()
         animal = request.form.get("animal", "").strip()
@@ -464,8 +499,9 @@ def edit(obs_id: int) -> Response:
             flash("Stream name and animal are required.", "danger")
             return redirect(url_for("edit", obs_id=obs_id))
         try:
-            start_dt = parse_datetime_to_utc(start_time_raw)
-            end_dt = parse_optional_datetime_to_utc(end_time_raw)
+            # Parse datetime inputs using user's timezone
+            start_dt = parse_datetime_to_utc(start_time_raw, display_tz)
+            end_dt = parse_optional_datetime_to_utc(end_time_raw, display_tz)
             if end_dt and end_dt < start_dt:
                 flash("End time cannot be earlier than start time.", "danger")
                 return redirect(url_for("edit", obs_id=obs_id))
@@ -487,8 +523,9 @@ def edit(obs_id: int) -> Response:
         flash(f"{g.category['observation_singular']} updated.", "success")
         return redirect(url_for("log"))
 
-    start_form = format_for_form(row["start_time_utc"])
-    end_form = format_for_form(row["end_time_utc"]) if row["end_time_utc"] else ""
+    # Format times in user's timezone for the form
+    start_form = format_for_form(row["start_time_utc"], display_tz)
+    end_form = format_for_form(row["end_time_utc"], display_tz) if row["end_time_utc"] else ""
     return render_template(
         "edit.html",
         observation=row,
@@ -562,6 +599,24 @@ def timezone_settings() -> Response:
             return redirect(url_for("timezone_settings"))
         flash("Please select a valid timezone.", "danger")
     return render_template("timezone.html", timezones=COMMON_TIMEZONES)
+
+
+@app.route("/api/set-timezone", methods=["POST"])
+def set_timezone() -> Response:
+    """API endpoint to set user's timezone from browser detection."""
+    data = request.get_json()
+    if data and "timezone" in data:
+        tz_name = data["timezone"]
+        # Only set if not already set by user preference
+        if "display_timezone" not in session:
+            try:
+                # Validate timezone
+                ZoneInfo(tz_name)
+                session["display_timezone"] = tz_name
+                return jsonify({"success": True, "timezone": tz_name})
+            except Exception:
+                return jsonify({"success": False, "error": "Invalid timezone"}), 400
+    return jsonify({"success": False, "error": "No timezone provided"}), 400
 
 
 @app.route("/healthz")
