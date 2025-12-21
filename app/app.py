@@ -1,10 +1,10 @@
 """
 How to run:
-1. Set required environment variable APP_CATEGORY to one of: land, air, sea.
-2. Optional environment variables: HOST (default 0.0.0.0), PORT (default 8000), DB_PATH (default observations.db), DEFAULT_TZ (fallback display timezone).
+1. Set required environment variable APP_CATEGORY to one of: land, air, sea, land_air.
+2. Optional environment variables: DB_PATH (default observations.db), DEFAULT_TZ (fallback display timezone).
 3. Install requirements: pip install flask.
 4. Start the server: python app.py
-5. Visit http://HOST:PORT/ in your browser to use the app.
+5. Visit http://localhost:5000/ in your browser to use the app.
 """
 import csv
 import math
@@ -46,6 +46,11 @@ CATEGORY_LABELS = {
         "observation_singular": "Sea Observation",
         "observation_plural": "Sea Observations",
     },
+    "land_air": {
+        "label": "Land & Air Animals",
+        "observation_singular": "Land & Air Observation",
+        "observation_plural": "Land & Air Observations",
+    },
 }
 
 COMMON_TIMEZONES = [
@@ -69,12 +74,10 @@ COMMON_TIMEZONES = [
 APP_CATEGORY = os.environ.get("APP_CATEGORY")
 if APP_CATEGORY not in CATEGORY_LABELS:
     raise RuntimeError(
-        "APP_CATEGORY environment variable must be set to one of: land, air, sea"
+        "APP_CATEGORY environment variable must be set to one of: land, air, sea, land_air"
     )
 
 DB_PATH = os.environ.get("DB_PATH", "observations.db")
-HOST = os.environ.get("HOST", "0.0.0.0")
-PORT = int(os.environ.get("PORT", "8000"))
 DEFAULT_TZ_NAME = os.environ.get("DEFAULT_TZ")
 
 app = Flask(__name__)
@@ -111,7 +114,7 @@ def initialize_db() -> None:
     schema = """
     CREATE TABLE IF NOT EXISTS observations (
         id INTEGER PRIMARY KEY,
-        category TEXT NOT NULL CHECK(category IN ('land','air','sea')),
+        category TEXT NOT NULL CHECK(category IN ('land','air','sea','land_air')),
         stream_name TEXT NOT NULL,
         animal TEXT NOT NULL,
         start_time_utc TEXT NOT NULL,
@@ -626,4 +629,4 @@ def healthcheck() -> str:
 
 if __name__ == "__main__":
     ensure_db_initialized()
-    app.run(host=HOST, port=PORT, debug=False)
+    app.run(debug=False)
