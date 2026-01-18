@@ -10,7 +10,7 @@ services:
       - "8000:8000"
     # Sets runtime environment variables for the application
     environment:
-      APP_CATEGORY: "land_air"
+      APP_CATEGORY: land
       FLASK_RUN_HOST: "0.0.0.0"
       FLASK_RUN_PORT: "8000"
     restart: unless-stopped
