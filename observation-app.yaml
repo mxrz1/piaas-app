@@ -1,0 +1,42 @@
+# Note: this file is deployed on the master node (*201) machine in the folder /root/observation-app-deployment
+# Application can be accessed via browser by <url of machine>:30008; e.g.: http://192.168.8.204:30008/
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: observation-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: observation
+  template:
+    metadata:
+      labels:
+        app: observation
+    spec:
+      containers:
+      - name: web
+        image: danipuh/observation-app:v1  # Docker Hub image
+        ports:
+        - containerPort: 8000
+        env:                               # Environment variables
+        - name: APP_CATEGORY
+          value: "land"
+        - name: FLASK_RUN_HOST
+          value: "0.0.0.0"
+        - name: FLASK_RUN_PORT
+          value: "8000"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: observation-service
+spec:
+  type: NodePort
+  selector:
+    app: observation
+  ports:
+    - protocol: TCP
+      port: 8000       # Port used inside the cluster
+      targetPort: 8000 # Port the Flask app listens on
+      nodePort: 30008  # Port for the browser

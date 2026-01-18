@@ -37,3 +37,14 @@ Note: the .env file is required and sets the category
    ```bash
    sudo docker run --rm -p 8000:8000 piaas-df-test
    ```
+
+## Publish image to docker hub (recommended for e.g. kubernetes deployment)
+1. Push new image to docker hub
+   ```bash
+   docker build -t danipuh/observation-app:v2 . && docker push danipuh/observation-app:v2
+   ```
+2. Update on your kubernetes machine
+   ```bash
+   kubectl set image deployment/observation-app web=danipuh/observation-app:v2
+   ```
+3. Vislual proof, how this deployment looks deployed [here](https://youtu.be/ty-WeQziNm0)
