@@ -47,4 +47,4 @@ Note: the .env file is required and sets the category
    ```bash
    kubectl set image deployment/observation-app web=danipuh/observation-app:v2
    ```
-3. Vislual proof, how this deployment looks deployed [here](https://youtu.be/ty-WeQziNm0)
+3. Visual proof, how this deployment looks deployed [here](https://youtu.be/ty-WeQziNm0)
