@@ -1,4 +1,5 @@
 Task: "As nobody else at NERDS uc can, you are tasked with monitoring the Kubernetes cluster using command line tools. Please document the most important of your daily monitoring and logging tasks in a small README file."
+A screencast of these tasks can be found [on my youtube channel](https://youtu.be/ic4UemyKEgo)
 
 # Daily Monitoring and Logging of Kubernetes Cluster
 
