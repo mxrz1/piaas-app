@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: web
-        image: danipuh/observation-app:v1  # Docker Hub image
+        image: image-registry.openshift-image-registry.svc:5000/wild-cam-observation-v2/piaas-app:latest
         ports:
         - containerPort: 8000
         env:                               # Environment variables
