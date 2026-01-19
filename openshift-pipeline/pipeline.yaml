@@ -1,0 +1,115 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: piaas-build-and-deploy #name of the pipeline
+spec:
+  workspaces:
+    - name: shared-workspace # this one is needed so the tasks can share data
+  params: # tekton want to be modular, so we define parameters to be used in the tasks and then define when we run them, but we took a shortcut and defined default values here
+    - name: git-url
+      type: string
+      description: Git repository URL for the application
+      default: https://github.com/mxrz1/piaas-app.git
+    - name: git-revision
+      type: string
+      description: Git revision to checkout
+      default: main
+    - name: IMAGE
+      type: string
+      description: Image reference to build and push
+    - name: manifest-dir
+      type: string
+      description: Manifest file or directory in the repo to apply # i.e. observation-app.yaml (how to deploy in kubernetes)
+      default: observation-app.yaml
+    - name: deployment-name
+      type: string
+      description: OpenShift Deployment to update
+      default: observation-app
+    - name: container-name
+      type: string
+      description: Container name in the Deployment to update
+      default: web
+  tasks:
+    - name: fetch-repository # first task: get the code from github
+      taskRef:
+        resolver: cluster # we use a cluster resolver to get tasks from a central place
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-clone # name of the task we want to use
+          - name: namespace # namespace where the task is located: i.e. in openshift-pipelines where we use it
+            value: openshift-pipelines
+      workspaces: # linkss the tasks workspace with the pipeline workspace
+        - name: output # menas it writes it into the folder /workspace/output
+          workspace: shared-workspace
+      params: # parameters for the git-clone task: nothing special: the url is necessary, subdirectory also so the file paths match
+        - name: URL
+          value: $(params.git-url)
+        - name: SUBDIRECTORY
+          value: ""
+        - name: DELETE_EXISTING
+          value: "true"
+        - name: REVISION
+          value: $(params.git-revision)
+
+    - name: build-image # second task build the image with buildah
+      taskRef:
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: buildah
+          - name: namespace
+            value: openshift-pipelines
+      params:
+        - name: IMAGE
+          value: $(params.IMAGE)
+        - name: TLSVERIFY # necessary as we are using the internal registry with self-signed certs
+          value: "false"
+      workspaces: # linkss the tasks workspace with the pipeline workspace
+        - name: source
+          workspace: shared-workspace
+      runAfter:
+        - fetch-repository
+
+    - name: deploy # third task: deploy the new image by applying the manifests and updating the deployment with the new image
+      runAfter:
+        - build-image
+      workspaces: # linkss the tasks workspace with the pipeline workspace
+        - name: source
+          workspace: shared-workspace
+      params:
+        - name: manifest-dir
+          value: $(params.manifest-dir)
+        - name: deployment-name
+          value: $(params.deployment-name)
+        - name: container-name
+          value: $(params.container-name)
+        - name: IMAGE
+          value: $(params.IMAGE)
+      taskSpec: # we define the task inline instead of using a taskRef to a pre-defined task
+        params:
+          - name: manifest-dir
+            type: string
+          - name: deployment-name
+            type: string
+          - name: container-name
+            type: string
+          - name: IMAGE
+            type: string
+        workspaces:
+          - name: source
+        steps: # a task consists out of steps
+          - name: apply-and-rollout
+            image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest # we use the oc cli image to apply manifests and update the deployment
+            workingDir: /workspace/source # important: set the working dir to the source workspace so we are in the cloned repo
+            script: | 
+              #!/usr/bin/env bash
+              set -euo pipefail
+              echo "Applying manifests from $(params.manifest-dir)"
+              oc apply -f "$(params.manifest-dir)"
+              echo "Updating image on deployment $(params.deployment-name)"
+              oc set image deployment/"$(params.deployment-name)" "$(params.container-name)"="$(params.IMAGE)"
+              oc rollout status deployment/"$(params.deployment-name)"

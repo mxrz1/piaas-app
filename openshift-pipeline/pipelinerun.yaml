@@ -1,0 +1,30 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: piaas-build-and-deploy-run-
+  namespace: wild-cam-observation-v2
+spec:
+  pipelineRef:
+    name: piaas-build-and-deploy
+  params:
+    - name: git-url
+      value: https://github.com/mxrz1/piaas-app.git
+    - name: git-revision
+      value: openshift
+    - name: IMAGE
+      value: image-registry.openshift-image-registry.svc:5000/wild-cam-observation-v2/piaas-app:latest
+    - name: manifest-dir
+      value: observation-app.yaml
+    - name: deployment-name
+      value: observation-app
+    - name: container-name
+      value: web
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
