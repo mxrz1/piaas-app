@@ -1,5 +1,4 @@
-# Note: this file is deployed on the master node (*201) machine in the folder /root/observation-app-deployment
-# Application can be accessed via browser by <url of machine>:30008; e.g.: http://192.168.8.204:30008/
+# OpenShift-friendly manifest (Route + ClusterIP Service).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -22,6 +21,8 @@ spec:
         env:                               # Environment variables
         - name: APP_CATEGORY
           value: "land"
+        - name: DB_PATH
+          value: "/tmp/observations.db"
         - name: FLASK_RUN_HOST
           value: "0.0.0.0"
         - name: FLASK_RUN_PORT
@@ -32,11 +33,20 @@ kind: Service
 metadata:
   name: observation-service
 spec:
-  type: NodePort
   selector:
     app: observation
   ports:
     - protocol: TCP
-      port: 8000       # Port used inside the cluster
+      port: 8000       # Port exposed by the service
       targetPort: 8000 # Port the Flask app listens on
-      nodePort: 30008  # Port for the browser
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: observation-route
+spec:
+  to:
+    kind: Service
+    name: observation-service
+  port:
+    targetPort: 8000
