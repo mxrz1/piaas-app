@@ -1,26 +1,27 @@
-# OpenShift-friendly manifest (Route + ClusterIP Service).
+# OpenShift-friendly manifest with two deployments (land_air and sea), each with its own Service, Route, and PVC.
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: observation-app
+  name: observation-app-land-air
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: observation
+      app: observation-land-air
   template:
     metadata:
       labels:
-        app: observation
+        app: observation-land-air
     spec:
       containers:
       - name: web
         image: image-registry.openshift-image-registry.svc:5000/wild-cam-observation-v2/piaas-app:latest
         ports:
         - containerPort: 8000
-        env:                               # Environment variables
+        env:
         - name: APP_CATEGORY
-          value: "land"
+          value: "land_air"
         - name: DB_PATH
           value: "/data/observations.db"
         - name: FLASK_RUN_HOST
@@ -33,35 +34,105 @@ spec:
       volumes:
       - name: observations-data
         persistentVolumeClaim:
-          claimName: observation-data-pvc
+          claimName: observation-data-land-air
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: observation-service
+  name: observation-service-land-air
 spec:
   selector:
-    app: observation
+    app: observation-land-air
   ports:
     - protocol: TCP
-      port: 8000       # Port exposed by the service
-      targetPort: 8000 # Port the Flask app listens on
+      port: 8000
+      targetPort: 8000
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: observation-route
+  name: observation-route-land-air
 spec:
   to:
     kind: Service
-    name: observation-service
+    name: observation-service-land-air
   port:
     targetPort: 8000
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: observation-data-pvc
+  name: observation-data-land-air
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: observation-app-sea
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: observation-sea
+  template:
+    metadata:
+      labels:
+        app: observation-sea
+    spec:
+      containers:
+      - name: web
+        image: image-registry.openshift-image-registry.svc:5000/wild-cam-observation-v2/piaas-app:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: APP_CATEGORY
+          value: "sea"
+        - name: DB_PATH
+          value: "/data/observations.db"
+        - name: FLASK_RUN_HOST
+          value: "0.0.0.0"
+        - name: FLASK_RUN_PORT
+          value: "8000"
+        volumeMounts:
+        - name: observations-data
+          mountPath: /data
+      volumes:
+      - name: observations-data
+        persistentVolumeClaim:
+          claimName: observation-data-sea
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: observation-service-sea
+spec:
+  selector:
+    app: observation-sea
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: observation-route-sea
+spec:
+  to:
+    kind: Service
+    name: observation-service-sea
+  port:
+    targetPort: 8000
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: observation-data-sea
 spec:
   accessModes:
     - ReadWriteOnce
