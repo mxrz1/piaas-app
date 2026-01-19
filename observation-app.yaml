@@ -22,11 +22,18 @@ spec:
         - name: APP_CATEGORY
           value: "land"
         - name: DB_PATH
-          value: "/tmp/observations.db"
+          value: "/data/observations.db"
         - name: FLASK_RUN_HOST
           value: "0.0.0.0"
         - name: FLASK_RUN_PORT
           value: "8000"
+        volumeMounts:
+        - name: observations-data
+          mountPath: /data
+      volumes:
+      - name: observations-data
+        persistentVolumeClaim:
+          claimName: observation-data-pvc
 ---
 apiVersion: v1
 kind: Service
@@ -50,3 +57,14 @@ spec:
     name: observation-service
   port:
     targetPort: 8000
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: observation-data-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
